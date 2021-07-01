@@ -9,6 +9,8 @@ from the Botletics Shield and then simply used male-male jumpers to connect pins
 the Seeed on top of the Arduino and then the Botletics on top of the Seeed (with the 10,11 - 4,5 jumpers above that.  I also have
 Vin jumpered to 5V which allows me to power everything through the DB9 port on the Seeed.
 
+Also had to break off the reset pin from the SIM7000 shield because it kept resetting after I powered down the Arduino.
+
 Issues to work out:
 1. If there's a comm issue, it stops sending messages to the charger (so it turns off).
 
