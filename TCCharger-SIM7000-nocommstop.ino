@@ -8,7 +8,6 @@
 
 /************************* PIN DEFINITIONS *********************************/
 #define FONA_PWRKEY 6
-//#define FONA_RST 7
 //SIM7000A uses 9,10,11 for RI, TX and RX but CANBUS Shield uses 9 and 11 for SPI comm so...
 #define FONA_TX 4 // Microcontroller RX  (Pins 9,10,11 cut on SIM7000A and 10,11 jumpered to 4,5)
 #define FONA_RX 5 // Microcontroller TX
@@ -30,8 +29,6 @@ Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
 
 Adafruit_MQTT_FONA mqtt(&fona, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
 
-//uint8_t txfailures = 0;  
-
 Adafruit_MQTT_Publish feed_charging = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/charging");
 
 #include <Wire.h>
@@ -45,20 +42,15 @@ uint8_t trycounter = 0;
 char battBuff[5] = "3123";
 
 
-//#include <mcp_can.h> 
 #include <SPI.h>
 
 #define CAN_2515
 #include "mcp2515_can.h"
 #define SPI_CS_PIN 9 //CS Pin
 
-//int led = 7;
-//word outputvoltage = 1160; //set max Voltage to 116.0V (offset = 0.1) NOTE: pv_voltage if statement will force off charger at 116
 #define outputvoltage 1160
 #define outputcurrent 300
-//word outputcurrent = 300; //set max Current to 30A (offset = 0.1)
-//unsigned long int sendId = 0x18E54024;    //0x18E54024 send to CH4100
-#define sendId 0x18E54024
+#define sendId 0x18E54024  // This is the send to header/name for CH4100
 #define fonatries 4
 unsigned int chargewatts;
 
@@ -73,7 +65,6 @@ unsigned long lastAdaTime = 0;
 #define minAdaTime 60000
 #define minCanTime 800
 
-//MCP_CAN CAN(SPI_CS_PIN); //CS Pin for SPI
 mcp2515_can CAN(SPI_CS_PIN);
 
 //Functions
@@ -92,18 +83,14 @@ void canRead(){
 
     if(receiveId == 0x18EB2440){ 
       if (bitRead(buf[1],0) == 1) errorct++;
-//New
       Serial.println(errorct);
       if (chargeron == 0xFC & errorct > 512) chargeron = 0xFB; // if 'commanded' on but found off a couple times, force off to prevent cycling.  Will be 17 after 1st on, ~21 after 2nd on
             
       float pv_voltage = (((float)buf[3]*256.0) + ((float)buf[2]))/10.0; //highByte/lowByte + offset
       Serial.println(pv_voltage);
       float pv_current = (3200-(((float)buf[5]*256.0) + ((float)buf[4])))/10.0; //highByte/lowByte + offset
-//      Serial.print(pv_current);
       chargewatts = pv_voltage * pv_current;
-//      Serial.print(chargewatts);
-Serial.println(chargeron);
-//Serial.println(pv_current);
+
       if (millis() > 5000 & millis() < 240000) chargeron = 0xFC; // wait 5-ish seconds before turning on charger
       if (pv_voltage > 116.4 || pv_voltage < 80) chargeron = 0xFB; // if voltage reaches this level turn off charger - changed from 116 to 116.4
       if (pv_current == 0.4 & millis() > 240000) chargeron = 0xFB; // if charge current drops to .4 amps, turn off charging.
@@ -143,15 +130,12 @@ void commCharger() {
 ** Function name:           setup
 ** Descriptions:            Arduino setup
 *************************************************/
-//void(*resetFunc) (void) = 0;
 
 void setup() {
 
   pinMode(2, INPUT);
   
   Serial.begin(9600); //Serial Port Initialize
-//  Serial.println(F("Del"));
-//  delay(5000); // Wait half a second for SIM7000 to turn on
 
   fona.powerOn(FONA_PWRKEY); // Power on the module
   moduleSetup(); // Establishes first-time serial comm and prints IMEI
@@ -187,21 +171,10 @@ void loop() {
 
 // Transmit keep charging message to Charger.
   if(millis() > (lastCanTime + minCanTime)) {
-//      Serial.print(F("CANok "));
-//      Serial.println(digitalRead(2));  
-//      Serial.print(F("CRc "));
-//      Serial.println(CAN.checkReceive());
-//      Serial.print(F("CEr "));
-//      Serial.println(CAN.checkError());
-//      if (digitalRead(2) == 1) {
-//        Serial.println(F("NResetng"));
-//        delay(1000); //Placeholder for canbus fix
-//      }
 
     lastCanTime = millis();
     commCharger();
     Serial.print("W");Serial.println(chargewatts);
-//    Serial.println(pv_voltage);
   }
 
 // Do FONA(SIM7000) Adafruit transmission
@@ -215,7 +188,6 @@ void loop() {
       delay(2000); // Retry in 2s
     }
 
-    battLevel = readVcc();
     battLevel = chargewatts;
     dtostrf(battLevel,4,0,battBuff);
     
@@ -236,22 +208,12 @@ void moduleSetup() {
   delay(500); // Short pause to let the command run
   fonaSS.begin(9600);
   
-//  if (!fona.begin(fonaSS)) {
-//    Serial.println(F("NoFona"));
-//    while (1); // Don't proceed if it couldn't find the device
-//  }
   while (!fona.begin(fonaSS) && (errorct < fonatries)) {
     Serial.println(F("StrtFona"));
     errorct++;
   }
   
   type = fona.type();
-////  uint8_t imeiLen = fona.getIMEI(imei);
-}
-
-float readVcc() {
-  fona.getBattVoltage(&battLevel);
-  return battLevel;
 }
 
 bool netStatus() {
@@ -285,6 +247,5 @@ void MQTT_publish_checkSuccess(Adafruit_MQTT_Publish &feed, const char *feedCont
   Serial.println(F("TrPub"));
   if (!feed.publish(feedContent)) {
     Serial.println(F("NoPub"));
-//    txfailures++;
   }
 }
