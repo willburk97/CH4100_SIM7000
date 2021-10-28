@@ -10,13 +10,13 @@ the Seeed on top of the Arduino and then the Botletics on top of the Seeed (with
 Vin jumpered to 5V which allows me to power everything through the DB9 port on the Seeed.
 
 Also had to break off the reset pin from the SIM7000 shield because it kept resetting after I powered down the Arduino.
-*Update:This ^ is still an issue. I just decided to feed power to the SIM7000 with a diode as Botletics suggested, so no battery.  It's working fine now.
+*Update:This ^ is still an issue. I just decided to feed power to the SIM7000 with a diode (I'm using an NTE125 diode. no battery.  It's working fine now.
 
 Issues to work out:
 1. If there's a comm issue, it stops sending messages to the charger (so it turns off). *This is mostly resolved
 
 2. The battery on the SIM7000A shield means it will stay on after the 5v power is removed. (I've been powering this from the 240v in from
-the charging station so this isn't ideal.  ***This is resolved by removing the battery and jumpering a diode from Vin to Vbat.
+the charging station so this isn't ideal.  ***This is resolved. I removed the battery and jumpered a diode (NTE125) from Vin to Vbat (My Vin is 5v).
 
 3. I always had issues with the CANBUS shield not turning on properly (I always had to power cycle the arduino after charger was powered
 to get it to work properly. I'm guessing this may be more problematic with the stacked shields but I don't know.  So far I've only tested
